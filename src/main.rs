@@ -113,6 +113,20 @@ fn add_item(channel: &mut Channel, page: &str) {
             page
         ),
     };
+    let item_url = match document
+        .select(&Selector::parse("meta[property=\"og:url\"]").unwrap())
+        .collect::<Vec<_>>()
+        .as_slice()
+    {
+        [url_element] => url_element
+            .value()
+            .attr("content")
+            .expect("Expected og:url meta element to have a content attribute."),
+        _ => panic!(
+            "Expected exactly one og:url meta element on page '{}'.",
+            page
+        ),
+    };
     let published_date = match document
         .select(&Selector::parse("meta[property=\"article:published_time\"]").unwrap())
         .collect::<Vec<_>>()
@@ -144,7 +158,6 @@ fn add_item(channel: &mut Channel, page: &str) {
     };
 
     // Find existing item
-    let item_url = format!("{}{}", channel.link, page);
     let existing_item_index = channel.items.iter().position(|existing_item| {
         existing_item
             .guid
@@ -161,7 +174,7 @@ fn add_item(channel: &mut Channel, page: &str) {
     };
     item.set_title(title);
     item.set_description(description.to_owned());
-    item.set_link(item_url.clone());
+    item.set_link(item_url.to_owned());
     item.set_pub_date(published_date.to_rfc2822());
     item.set_content(content);
     let mut guid = Guid::default();
