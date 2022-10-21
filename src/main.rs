@@ -99,6 +99,20 @@ fn add_item(channel: &mut Channel, page: &str) {
         [title_element] => title_element.text().collect::<Vec<_>>().join(""),
         _ => panic!("Expected exactly one title element on page '{}'.", page),
     };
+    let description = match document
+        .select(&Selector::parse("meta[property=\"og:description\"]").unwrap())
+        .collect::<Vec<_>>()
+        .as_slice()
+    {
+        [description_element] => description_element
+            .value()
+            .attr("content")
+            .expect("Expected og:description meta element to have a content attribute."),
+        _ => panic!(
+            "Expected exactly one og:description meta element on page '{}'.",
+            page
+        ),
+    };
     let published_date = match document
         .select(&Selector::parse("meta[property=\"article:published_time\"]").unwrap())
         .collect::<Vec<_>>()
@@ -146,6 +160,7 @@ fn add_item(channel: &mut Channel, page: &str) {
         None => Item::default(),
     };
     item.set_title(title);
+    item.set_description(description.to_owned());
     item.set_link(item_url.clone());
     item.set_pub_date(published_date.to_rfc2822());
     item.set_content(content);
