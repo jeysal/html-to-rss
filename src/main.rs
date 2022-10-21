@@ -3,6 +3,7 @@ mod args;
 use args::Args;
 use clap::Parser;
 use rss::validation::Validate;
+use rss::Category;
 use rss::Channel;
 use rss::Guid;
 use rss::Image;
@@ -91,6 +92,7 @@ fn add_item(channel: &mut Channel, page: &str) {
     let document = Html::parse_document(&html);
 
     // Extract data from HTML
+
     let title = match document
         .select(&Selector::parse("meta[property=\"og:title\"]").unwrap())
         .collect::<Vec<_>>()
@@ -105,6 +107,7 @@ fn add_item(channel: &mut Channel, page: &str) {
             page
         ),
     };
+
     let description = match document
         .select(&Selector::parse("meta[property=\"og:description\"]").unwrap())
         .collect::<Vec<_>>()
@@ -119,6 +122,7 @@ fn add_item(channel: &mut Channel, page: &str) {
             page
         ),
     };
+
     let item_url = match document
         .select(&Selector::parse("meta[property=\"og:url\"]").unwrap())
         .collect::<Vec<_>>()
@@ -133,6 +137,7 @@ fn add_item(channel: &mut Channel, page: &str) {
             page
         ),
     };
+
     let published_date = match document
         .select(&Selector::parse("meta[property=\"article:published_time\"]").unwrap())
         .collect::<Vec<_>>()
@@ -146,6 +151,17 @@ fn add_item(channel: &mut Channel, page: &str) {
         .unwrap_or_else(|_| panic!("Cannot parse published date on page '{}'.", page)),
         _ => panic!("Expected exactly one article:published_time meta element."),
     };
+
+    let categories: Vec<_> = document
+        .select(&Selector::parse("meta[property=\"article:tag\"]").unwrap())
+        .map(|tag_element| {
+            tag_element
+                .value()
+                .attr("content")
+                .expect("Expected article:tag meta element to have a content attribute.")
+        })
+        .collect();
+
     let h2_html = match document
         .select(&Selector::parse("h2").unwrap())
         .collect::<Vec<_>>()
@@ -182,6 +198,16 @@ fn add_item(channel: &mut Channel, page: &str) {
     item.set_description(description.to_owned());
     item.set_link(item_url.to_owned());
     item.set_pub_date(published_date.to_rfc2822());
+    item.set_categories(
+        categories
+            .iter()
+            .map(|category_name| {
+                let mut category = Category::default();
+                category.set_name(*category_name);
+                category
+            })
+            .collect::<Vec<_>>(),
+    );
     item.set_content(content);
     let mut guid = Guid::default();
     guid.set_value(item_url);
