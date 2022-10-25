@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.3.1
+
+### Fixes
+
+- do not escape `<noscript>` tags
+
 ## v0.3.0
 
 ### Features
