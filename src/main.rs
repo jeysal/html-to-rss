@@ -2,6 +2,7 @@ mod args;
 
 use args::Args;
 use clap::Parser;
+use html5ever::driver::{self, ParseOpts};
 use rss::validation::Validate;
 use rss::Category;
 use rss::Channel;
@@ -13,6 +14,7 @@ use scraper::Selector;
 use std::fs::File;
 use std::io::BufReader;
 use std::io::Read;
+use tendril::TendrilSink;
 
 const BASE_URL_FILE_PATH: &str = "CNAME";
 
@@ -89,7 +91,10 @@ fn add_item(channel: &mut Channel, page: &str) {
         .unwrap_or_else(|_| panic!("Cannot open page '{}'.", page))
         .read_to_string(&mut html)
         .unwrap_or_else(|_| panic!("Cannot read from page '{}'", page));
-    let document = Html::parse_document(&html);
+    let mut parse_opts = ParseOpts::default();
+    parse_opts.tree_builder.scripting_enabled = false;
+    let parser = driver::parse_document(Html::new_document(), parse_opts);
+    let document = parser.one(html);
 
     // Extract data from HTML
 

@@ -426,8 +426,10 @@ version = "0.3.0"
 dependencies = [
  "chrono",
  "clap",
+ "html5ever",
  "rss",
  "scraper",
+ "tendril",
 ]
 
 [[package]]
